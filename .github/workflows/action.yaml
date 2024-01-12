@@ -1,5 +1,4 @@
-name: Deploy lambda function
-
+name: Deploy Lambda Function
 on: 
   push:
     branches:
@@ -9,23 +8,37 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Check out code
         uses: actions/checkout@v2
-      - name: Set up python on our runner
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install dependencies
+      - name: Install libraries
         run: |
             cd function
             python -m pip install --upgrade pip
-            if [ -f requirements.txt ]; then pip install -r requirements.txt -t .; fi
-      - name: Create zip bundle
+            if [ -f requirements.txt ]; then pip install -r requirements.txt -t .; fi 
+      - name: Zip bundle
         run: |
             cd function
             zip -r ../${{ github.sha }}.zip .
-      - name: Archive Artifacts
+      - name: Archive artifact
         uses: actions/upload-artifact@v2
         with:
           name: zipped-bundle
           path: ${{ github.sha }}.zip
+
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
+        with:
+          tag_name: ${{ github.run_number }}
+          release_name: Release from ${{ github.run_number }}
+          body: New release for ${{ github.sha }}
+          draft: false
+          prerelease: false
